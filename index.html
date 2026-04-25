@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harta Karun — Relasi & Fungsi Kelas 8</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   HARTA KARUN — Relasi & Fungsi Kelas 8
+   Pirate Adventure with Full 3D Popup System
+============================================================ */
+
+:root {
+  --parchment:      #f2d9a2;
+  --parchment-dark: #c9963c;
+  --parchment-aged: #e8c97a;
+  --ocean-deep:     #0f2540;
+  --ocean-mid:      #1a4a7a;
+  --ocean-light:    #3a7daa;
+  --ink:            #1c0e06;
+  --gold:           #c8910f;
+  --gold-light:     #f0c040;
+  --gold-bright:    #ffe169;
+  --red-flag:       #7a1515;
+  --red-mid:        #a01a1a;
+  --green:          #2a5a20;
+  --sand:           #c8a06a;
+  --wood:           #5c3018;
+  --wood-light:     #8b5030;
+  --shadow:         rgba(0,0,0,0.45);
+  --glow-gold:      rgba(240,192,64,0.55);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'Crimson Text', Georgia, serif;
+  background: var(--ocean-deep);
+  color: var(--ink);
+  perspective: 1200px;
+}
+
+/* ===================== LOADING ===================== */
+#loading-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: radial-gradient(ellipse at 50% 60%, #112a4a 0%, #060f1e 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1.4rem;
+  transition: opacity 1s ease;
+}
+#loading-screen.fade-out { opacity: 0; pointer-events: none; }
+
+.loading-anchor {
+  font-size: 4.5rem;
+  animation: anchor-bob 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 18px rgba(240,192,64,0.6));
+}
+@keyframes anchor-bob {
+  0%,100% { transform: translateY(0) rotate(-8deg); }
+  50%      { transform: translateY(-16px) rotate(8deg); }
+}
+.loading-title {
+  font-family: 'Pirata One', cursive;
+  color: var(--gold-light);
+  font-size: 1.6rem;
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px var(--glow-gold);
+}
+.loading-bar {
+  width: 280px; height: 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 5px; overflow: hidden;
+  border: 1px solid var(--gold);
+}
+.loading-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+  border-radius: 5px;
+  animation: fill-bar 2.2s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes fill-bar { to { width: 100%; } }
+
+/* ===================== SCREENS ===================== */
+.screen {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow-y: auto;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.screen.hidden {
+  opacity: 0; pointer-events: none;
+  transform: scale(0.96) translateY(8px);
+}
+
+/* ===================== COVER ===================== */
+#screen-cover {
+  background:
+    radial-gradient(ellipse at 50% 40%, #1a4a7a 0%, #0d2540 55%, #050d1a 100%);
+  overflow: hidden;
+}
+
+.stars {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.star {
+  position: absolute;
+  background: white; border-radius: 50%;
+  animation: twinkle 3s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0.2; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.4); }
+}
+
+.waves-container {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  pointer-events: none; height: 220px; overflow: hidden;
+}
+.wave {
+  position: absolute; bottom: 0; left: -50%;
+  width: 200%; height: 160px;
+  border-radius: 50% 50% 0 0;
+  opacity: 0.5;
+  animation: wave-roll 7s ease-in-out infinite;
+}
+.wave:nth-child(1) { background: rgba(30,90,160,0.4); animation-duration: 7s; }
+.wave:nth-child(2) { background: rgba(46,107,178,0.3); animation-duration: 9s; animation-delay: -3s; height: 130px; }
+.wave:nth-child(3) { background: rgba(91,163,208,0.2); animation-duration: 5s; animation-delay: -5s; height: 100px; }
+@keyframes wave-roll {
+  0%,100% { transform: translateX(0) scaleY(1); }
+  50%      { transform: translateX(6%) scaleY(1.12); }
+}
+
+/* Ship silhouette */
+.ship-silhouette {
+  position: absolute;
+  bottom: 80px; left: 5%;
+  font-size: clamp(3rem, 6vw, 5rem);
+  opacity: 0.3;
+  animation: ship-float 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ship-float {
+  0%,100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-14px) rotate(2deg); }
+}
+
+.cover-content {
+  position: relative; z-index: 5;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.9rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.cover-rope-top, .cover-rope-bottom {
+  font-family: 'Pirata One', cursive;
+  color: var(--gold);
+  opacity: 0.65;
+  letter-spacing: 8px;
+  font-size: 0.9rem;
+}
+
+.game-title {
+  font-family: 'Pirata One', cursive;
+  font-size: clamp(3rem, 10vw, 5.5rem);
+  color: var(--gold-bright);
+  text-shadow:
+    0 0 40px rgba(255,225,100,0.6),
+    4px 4px 0 var(--red-flag),
+    8px 8px 0 rgba(80,10,10,0.6);
+  line-height: 1.05;
+  animation: title-pulse 3s ease-in-out infinite;
+}
+@keyframes title-pulse {
+  0%,100% { text-shadow: 0 0 40px rgba(255,225,100,0.6), 4px 4px 0 var(--red-flag), 8px 8px 0 rgba(80,10,10,0.6); }
+  50%      { text-shadow: 0 0 70px rgba(255,225,100,0.9), 4px 4px 0 var(--red-flag), 8px 8px 0 rgba(80,10,10,0.6); }
+}
+.game-title span {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 0.5em;
+  color: var(--parchment);
+  letter-spacing: 8px;
+  text-shadow: 2px 2px 0 #0a1f38;
+}
+
+.subtitle { color: rgba(245,222,179,0.8); font-style: italic; font-size: 1.05rem; }
+
+.coins-row {
+  font-size: 2rem; letter-spacing: 6px;
+  animation: coins-glow 2.5s ease-in-out infinite alternate;
+}
+@keyframes coins-glow {
+  from { filter: brightness(0.9); }
+  to   { filter: brightness(1.6) drop-shadow(0 0 12px gold); }
+}
+
+.btn-start {
+  font-family: 'Pirata One', cursive;
+  font-size: 1.4rem;
+  padding: 1rem 3rem;
+  background: linear-gradient(160deg, var(--red-mid), var(--red-flag));
+  color: var(--gold-bright);
+  border: 3px solid var(--gold);
+  border-radius: 5px; cursor: pointer;
+  letter-spacing: 3px;
+  text-shadow: 1px 1px 3px black;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    0 0 0 0 var(--glow-gold);
+  transition: all 0.25s cubic-bezier(.4,0,.2,1);
+  margin-top: 0.5rem;
+  position: relative; overflow: hidden;
+}
+.btn-start::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(160deg, rgba(255,255,255,0.12), transparent);
+  pointer-events: none;
+}
+.btn-start:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.7), 0 0 30px rgba(212,160,23,0.5);
+}
+.btn-start:active { transform: translateY(0) scale(0.97); }
+
+.hint-text { color: rgba(245,222,179,0.5); font-size: 0.88rem; font-style: italic; }
+
+/* ===================== MAP ===================== */
+#screen-map {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(30,90,160,0.7), transparent 60%),
+    var(--ocean-deep);
+  justify-content: flex-start; padding: 0;
+}
+
+.map-header {
+  width: 100%; display: flex;
+  align-items: center; justify-content: space-between;
+  padding: 0.8rem 1.4rem;
+  background: rgba(0,0,0,0.5);
+  border-bottom: 2px solid var(--gold);
+  position: relative; z-index: 10;
+  backdrop-filter: blur(4px);
+}
+.map-title {
+  font-family: 'Pirata One', cursive;
+  color: var(--gold-light); font-size: 1.5rem;
+  text-shadow: 0 0 12px var(--glow-gold);
+}
+.score-badge {
+  background: rgba(200,145,15,0.18);
+  border: 1px solid var(--gold);
+  border-radius: 20px; padding: 5px 16px;
+  color: var(--gold-bright);
+  font-family: 'Cinzel', serif;
+  font-size: 1rem; font-weight: 700;
+}
+.btn-nav-sm {
+  background: transparent;
+  border: 1px solid rgba(245,222,179,0.4);
+  color: var(--parchment);
+  padding: 6px 14px; border-radius: 4px;
+  cursor: pointer; font-family: 'Crimson Text', serif; font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.btn-nav-sm:hover { background: rgba(255,255,255,0.1); border-color: var(--gold); }
+
+.map-container {
+  flex: 1; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.2rem; overflow: auto;
+}
+
+/* THE TREASURE MAP ISLAND */
+.map-island {
+  position: relative;
+  width: min(720px, 96vw);
+  aspect-ratio: 7/5;
+  background:
+    radial-gradient(ellipse 75% 65% at 45% 52%,
+      #d4a96a 0%, #b88030 38%, #8a5820 65%, #5a3510 100%);
+  border-radius: 42% 52% 48% 55% / 38% 48% 55% 52%;
+  border: 5px solid var(--parchment-dark);
+  box-shadow:
+    0 0 0 10px var(--ocean-mid),
+    0 0 0 14px rgba(180,140,60,0.25),
+    0 20px 50px rgba(0,0,0,0.5),
+    inset 0 0 80px rgba(0,0,0,0.18);
+  overflow: visible;
+  /* subtle parchment grain */
+  filter: contrast(1.04) saturate(0.95);
+}
+.map-island::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg, transparent, transparent 20px,
+      rgba(0,0,0,0.02) 20px, rgba(0,0,0,0.02) 21px
+    ),
+    radial-gradient(ellipse at 28% 28%, rgba(210,185,100,0.35), transparent 55%),
+    radial-gradient(ellipse at 72% 68%, rgba(140,90,40,0.2), transparent 45%);
+  border-radius: inherit; pointer-events: none;
+}
+.map-island::after {
+  content: '';
+  position: absolute; inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,220,120,0.18), transparent 50%, rgba(100,60,20,0.15));
+  pointer-events: none;
+}
+
+.sea-creature {
+  position: absolute;
+  font-size: clamp(1.1rem, 2.8vw, 1.6rem);
+  animation: sea-bob 4s ease-in-out infinite;
+  pointer-events: none; user-select: none;
+}
+@keyframes sea-bob {
+  0%,100% { transform: translateY(0) rotate(-5deg); }
+  50%      { transform: translateY(-10px) rotate(5deg); }
+}
+
+.map-sign {
+  position: absolute; top: 7%; left: 3%;
+  background: var(--wood);
+  border: 3px solid var(--wood-light);
+  border-radius: 4px;
+  padding: 6px 12px;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.35);
+}
+.map-sign span {
+  font-family: 'Pirata One', cursive;
+  font-size: clamp(0.55rem, 1.6vw, 0.78rem);
+  color: var(--parchment-aged); letter-spacing: 3px; line-height: 1.4;
+}
+
+/* PATH SVG */
+.map-paths {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  overflow: visible; pointer-events: none;
+}
+.treasure-path {
+  fill: none;
+  stroke: var(--red-flag);
+  stroke-width: 0.9;
+  stroke-dasharray: 4,3;
+  opacity: 0.7;
+}
+
+/* TREASURE SPOTS */
+.treasure-spot {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  transition: transform 0.25s cubic-bezier(.34,1.56,.64,1);
+  z-index: 5;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+.treasure-spot:hover:not(.locked) { transform: translate(-50%, -50%) scale(1.18); }
+.treasure-spot.locked { cursor: not-allowed; opacity: 0.65; filter: grayscale(0.5) drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
+.treasure-spot.done .spot-icon { filter: brightness(1.2) drop-shadow(0 0 8px gold); }
+
+.spot-icon {
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(212,160,23,0.6);
+  border-radius: 50%; padding: 6px;
+  backdrop-filter: blur(2px);
+  transition: all 0.3s;
+  line-height: 1;
+}
+.spot-label {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(0.5rem, 1.2vw, 0.65rem);
+  color: var(--ink); font-weight: 700;
+  background: rgba(245,222,179,0.85);
+  border: 1px solid rgba(139,89,40,0.4);
+  padding: 2px 7px; border-radius: 3px;
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+}
+.spot-status { font-size: 0.85rem; }
+
+.btn-ar {
+  position: absolute; bottom: 1.2rem; right: 1.2rem;
+  background: rgba(0,255,136,0.12);
+  border: 2px solid #00cc6a;
+  color: #00ff88; padding: 8px 18px;
+  border-radius: 20px; cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: 0.82rem;
+  transition: all 0.2s; z-index: 20;
+}
+.btn-ar:hover { background: rgba(0,255,136,0.25); box-shadow: 0 0 15px rgba(0,255,136,0.3); }
+
+/* ===================== 3D POPUP CHAPTER SYSTEM ===================== */
+#screen-chapter {
+  background:
+    radial-gradient(ellipse at 50% 50%, #1a3a6a 0%, #0a1e3a 100%);
+  perspective: 1000px;
+  overflow: visible;
+}
+
+/* DIMMER BACKDROP for depth */
+.chapter-backdrop {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%);
+  pointer-events: none;
+}
+
+/* ---- THE 3D BOOK / POPUP ---- */
+.popup-stage {
+  position: relative;
+  width: min(860px, 96vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  perspective: 1400px;
+  z-index: 10;
+}
+
+.book-3d-wrapper {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  animation: book-float 5s ease-in-out infinite;
+}
+@keyframes book-float {
+  0%,100% { transform: rotateX(2deg) translateY(0); }
+  50%      { transform: rotateX(-1deg) translateY(-8px); }
+}
+
+/* The open book */
+.open-book {
+  display: flex;
+  width: 100%;
+  min-height: 300px;
+  max-height: 400px;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 30px 50px rgba(0,0,0,0.7));
+}
+
+/* Book spine (3D center) */
+.book-spine-3d {
+  width: 24px;
+  min-width: 24px;
+  background: linear-gradient(180deg, #3c1a08, #6b3018, #4a2010, #6b3018, #3c1a08);
+  border-left: 2px solid rgba(255,200,100,0.3);
+  border-right: 2px solid rgba(255,200,100,0.3);
+  position: relative; z-index: 10;
+  box-shadow:
+    -4px 0 12px rgba(0,0,0,0.5),
+    4px 0 12px rgba(0,0,0,0.5);
+  transform-style: preserve-3d;
+  transform: translateZ(8px);
+}
+.book-spine-3d::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,200,80,0.15), transparent);
+}
+
+/* Book pages */
+.page {
+  flex: 1;
+  background:
+    linear-gradient(135deg, #f5e8c0 0%, #edd898 40%, #e8cf80 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.page::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg, transparent, transparent 26px,
+      rgba(160,120,50,0.08) 26px, rgba(160,120,50,0.08) 27px
+    );
+  pointer-events: none;
+}
+
+.page-left {
+  border-radius: 12px 0 0 12px;
+  border: 3px solid var(--parchment-dark);
+  border-right: none;
+  box-shadow: inset -15px 0 30px rgba(0,0,0,0.12);
+  transform-origin: right center;
+}
+.page-right {
+  border-radius: 0 12px 12px 0;
+  border: 3px solid var(--parchment-dark);
+  border-left: none;
+  box-shadow: inset 15px 0 30px rgba(0,0,0,0.12);
+  transform-origin: left center;
+}
+
+/* Page turn corners */
+.page-left::after {
+  content: '';
+  position: absolute; bottom: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 0 32px 32px;
+  border-color: transparent transparent rgba(180,140,60,0.3) transparent;
+}
+.page-right::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 32px 32px 0;
+  border-color: transparent rgba(180,140,60,0.3) transparent transparent;
+}
+
+.page-inner {
+  padding: 1.5rem 1.6rem 2.2rem;
+  flex: 1; display: flex; flex-direction: column; gap: 0.75rem;
+  position: relative; z-index: 2;
+  overflow-y: auto;
+}
+
+/* ---- 3D POPUP ELEMENT (pops out of book) ---- */
+.popup-3d-element {
+  position: absolute;
+  left: 50%; top: -60px;
+  transform: translateX(-50%);
+  z-index: 50;
+  transform-style: preserve-3d;
+  animation: popup-rise 0.7s cubic-bezier(.34,1.56,.64,1) forwards,
+             popup-hover 4s ease-in-out 0.7s infinite;
+  pointer-events: none;
+}
+@keyframes popup-rise {
+  from { opacity: 0; transform: translateX(-50%) translateY(60px) scale(0.3) rotateX(40deg); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) rotateX(0); }
+}
+@keyframes popup-hover {
+  0%,100% { transform: translateX(-50%) translateY(0) rotateY(-5deg); }
+  50%      { transform: translateX(-50%) translateY(-12px) rotateY(5deg); }
+}
+
+.popup-3d-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  filter: drop-shadow(0 20px 30px rgba(0,0,0,0.8));
+}
+
+/* The 3D object face */
+.popup-face-front {
+  width: 120px; height: 120px;
+  background: linear-gradient(135deg, #e8d060, #c8900a, #e8b020);
+  border: 4px solid #f0d060;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3.5rem;
+  box-shadow:
+    0 0 0 2px rgba(255,220,80,0.4),
+    0 10px 30px rgba(0,0,0,0.5);
+  transform-style: preserve-3d;
+  transform: rotateX(5deg);
+  position: relative;
+}
+.popup-face-front::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 60%);
+  border-radius: 8px;
+}
+
+/* Side face of the 3D box */
+.popup-face-bottom {
+  width: 120px; height: 20px;
+  background: linear-gradient(180deg, #a06808, #703a04);
+  transform: rotateX(-90deg) translateZ(-10px);
+  transform-origin: top center;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Shadow beneath popup */
+.popup-3d-shadow {
+  width: 90px; height: 18px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.5), transparent);
+  position: absolute;
+  bottom: -24px; left: 50%;
+  transform: translateX(-50%);
+  animation: shadow-pulse 4s ease-in-out infinite;
+}
+@keyframes shadow-pulse {
+  0%,100% { transform: translateX(-50%) scaleX(1); opacity: 0.5; }
+  50%      { transform: translateX(-50%) scaleX(0.7); opacity: 0.3; }
+}
+
+/* Sparkle effects around popup */
+.sparkle {
+  position: absolute;
+  width: 6px; height: 6px;
+  background: var(--gold-bright);
+  border-radius: 50%;
+  animation: sparkle-fly var(--dur, 2s) ease-in-out infinite var(--delay, 0s);
+  pointer-events: none;
+}
+@keyframes sparkle-fly {
+  0%   { transform: translate(0,0) scale(0); opacity: 0; }
+  30%  { opacity: 1; transform: translate(var(--tx,20px), var(--ty,-30px)) scale(1); }
+  100% { opacity: 0; transform: translate(var(--tx2,40px), var(--ty2,-60px)) scale(0.3); }
+}
+
+/* ---- PAGE CONTENT STYLES ---- */
+.chapter-icon-display {
+  font-size: 2.8rem;
+  text-align: center;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+.chapter-title-display {
+  font-family: 'Pirata One', cursive;
+  font-size: clamp(1.3rem, 3vw, 1.7rem);
+  color: var(--wood);
+  text-shadow: 1px 1px 0 rgba(255,220,120,0.5);
+  text-align: center;
+  line-height: 1.2;
+}
+.chapter-num {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem; letter-spacing: 4px;
+  color: var(--parchment-dark); text-align: center;
+  text-transform: uppercase;
+}
+
+.divider-ornament {
+  text-align: center; color: var(--parchment-dark);
+  font-size: 1rem; letter-spacing: 6px; opacity: 0.7;
+}
+
+.materi-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem; letter-spacing: 3px;
+  color: var(--wood); text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.materi-text {
+  font-size: 0.95rem; line-height: 1.7; color: #2c1810;
+  background: rgba(255,255,255,0.3);
+  border-left: 3px solid var(--gold);
+  padding: 0.6rem 0.8rem;
+  border-radius: 0 4px 4px 0;
+}
+
+.contoh-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem; letter-spacing: 3px;
+  color: var(--wood); text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+.contoh-box {
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem; line-height: 1.7;
+  color: var(--ink);
+  background: rgba(180,140,60,0.1);
+  border: 1px solid rgba(139,89,40,0.25);
+  border-radius: 6px; padding: 0.8rem 1rem;
+}
+
+/* Page number decoration */
+.page-number {
+  position: absolute; bottom: 10px;
+  font-family: 'Cinzel', serif; font-size: 0.7rem;
+  color: rgba(100,60,20,0.5); letter-spacing: 2px;
+}
+.page-left .page-number  { left: 50%; transform: translateX(-50%); }
+.page-right .page-number { right: 50%; transform: translateX(50%); }
+
+/* Navigation below book */
+.book-nav {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  width: 100%; padding: 0 0.5rem;
+  gap: 1rem;
+}
+.btn-map-return {
+  font-family: 'Pirata One', cursive;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(245,222,179,0.4);
+  color: var(--parchment); padding: 8px 18px;
+  border-radius: 5px; cursor: pointer; font-size: 0.9rem;
+  transition: all 0.2s; letter-spacing: 1px;
+}
+.btn-map-return:hover { background: rgba(255,255,255,0.14); border-color: var(--gold); }
+
+.chapter-dots {
+  display: flex; gap: 6px; align-items: center;
+}
+.chapter-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: rgba(245,222,179,0.3);
+  border: 1px solid rgba(245,222,179,0.4);
+  transition: all 0.3s;
+}
+.chapter-dot.active { background: var(--gold); border-color: var(--gold-bright); box-shadow: 0 0 8px var(--glow-gold); }
+.chapter-dot.done   { background: rgba(45,90,39,0.8); border-color: #4a9a3a; }
+
+.btn-quiz-main {
+  font-family: 'Pirata One', cursive;
+  background: linear-gradient(135deg, #7a1515, #5a0d0d);
+  color: var(--gold-bright); font-size: 0.95rem;
+  border: 2px solid var(--gold); border-radius: 5px;
+  padding: 8px 20px; cursor: pointer; letter-spacing: 1px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.btn-quiz-main:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.6), 0 0 15px rgba(212,160,23,0.4); }
+
+/* ===================== QUIZ MODAL ===================== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.78);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200; padding: 1rem;
+  backdrop-filter: blur(3px);
+  transition: opacity 0.3s;
+}
+.modal-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.quiz-box {
+  background: linear-gradient(160deg, #f5e8c0, #edd898);
+  border: 3px solid var(--gold);
+  border-radius: 12px;
+  max-width: 480px; width: 100%;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,220,80,0.2);
+  animation: quiz-bounce 0.5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes quiz-bounce { from { transform: scale(0.6) rotateX(15deg); opacity: 0; } }
+
+.quiz-header {
+  background: linear-gradient(135deg, var(--ocean-deep), var(--ocean-mid));
+  padding: 1rem 1.5rem;
+  display: flex; align-items: center; gap: 0.8rem;
+}
+.quiz-header-icon { font-size: 2rem; }
+.quiz-header h3 {
+  font-family: 'Pirata One', cursive;
+  color: var(--gold-light); font-size: 1.2rem;
+}
+.quiz-body { padding: 1.3rem 1.5rem; }
+.quiz-question {
+  font-size: 1rem; line-height: 1.65;
+  color: var(--ink); margin-bottom: 1rem;
+  font-weight: 600;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 0.5rem; }
+.quiz-option {
+  padding: 0.7rem 1rem;
+  border: 2px solid rgba(139,89,40,0.25);
+  border-radius: 7px; cursor: pointer;
+  font-size: 0.92rem;
+  font-family: 'Crimson Text', serif;
+  background: rgba(255,255,255,0.5);
+  transition: all 0.15s;
+  text-align: left; color: var(--ink);
+}
+.quiz-option:hover { border-color: var(--ocean-mid); background: rgba(46,107,158,0.1); }
+.quiz-option.correct { background: rgba(45,90,39,0.15); border-color: #3a8a2a; color: #1a4012; }
+.quiz-option.wrong   { background: rgba(139,26,26,0.1);  border-color: var(--red-flag);  color: #5a0e0e; }
+
+.quiz-feedback {
+  margin: 0 1.5rem 1.2rem;
+  padding: 0.75rem 1rem; border-radius: 7px;
+  font-size: 0.9rem; line-height: 1.5;
+}
+.quiz-feedback.hidden { display: none; }
+.quiz-feedback.success { background: rgba(45,90,39,0.12); border: 1px solid #3a8a2a; color: #1a4012; }
+.quiz-feedback.fail    { background: rgba(139,26,26,0.1); border: 1px solid var(--red-flag); color: #5a0e0e; }
+
+/* ===================== AR SCREEN ===================== */
+#screen-ar {
+  background: #070b12;
+  justify-content: flex-start;
+}
+.ar-header {
+  width: 100%; display: flex; align-items: center; gap: 1rem;
+  padding: 0.75rem 1.4rem;
+  background: rgba(0,0,0,0.7); border-bottom: 1px solid rgba(0,255,136,0.2);
+  color: white;
+}
+.ar-header h2 {
+  font-family: 'Cinzel', serif; font-size: 1.1rem; color: #00ff88;
+  text-shadow: 0 0 10px rgba(0,255,136,0.5);
+}
+.ar-body {
+  flex: 1; width: 100%; overflow-y: auto;
+  padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem;
+}
+.ar-viewfinder {
+  width: min(300px, 88vw); aspect-ratio: 4/3;
+  border: 2px solid rgba(0,255,136,0.5);
+  border-radius: 8px; position: relative;
+  background: rgba(0,255,136,0.02);
+  display: flex; align-items: center; justify-content: center;
+}
+.ar-corner {
+  position: absolute; width: 22px; height: 22px;
+}
+.ar-corner.tl { top:-2px;left:-2px; border-top:3px solid #00ff88; border-left:3px solid #00ff88; }
+.ar-corner.tr { top:-2px;right:-2px; border-top:3px solid #00ff88; border-right:3px solid #00ff88; }
+.ar-corner.bl { bottom:-2px;left:-2px; border-bottom:3px solid #00ff88; border-left:3px solid #00ff88; }
+.ar-corner.br { bottom:-2px;right:-2px; border-bottom:3px solid #00ff88; border-right:3px solid #00ff88; }
+.ar-scan-line {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, #00ff88, transparent);
+  animation: ar-scan 2.5s ease-in-out infinite;
+  box-shadow: 0 0 8px rgba(0,255,136,0.6);
+}
+@keyframes ar-scan { 0%,100%{top:10%} 50%{top:85%} }
+.ar-prompt { color: rgba(0,255,136,0.7); font-size: 0.82rem; text-align:center; padding: 0 1rem; }
+
+.ar-markers h3 { color: white; font-family: 'Cinzel', serif; font-size: 0.95rem; margin-bottom: 0.8rem; text-align:center; }
+.marker-grid { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+.marker-card {
+  background: white; border-radius: 8px;
+  padding: 0.75rem; text-align:center;
+  cursor:pointer; transition: transform 0.2s;
+  min-width: 90px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.marker-card:hover { transform: scale(1.06) translateY(-4px); }
+.marker-card p { font-size:0.75rem; margin-top:0.4rem; color:#333; font-family:'Cinzel',serif; }
+.marker-qr {
+  width:70px; height:70px; background:#111;
+  border:2px solid #000; border-radius:4px; overflow:hidden;
+}
+.qr-1 { background-image: repeating-linear-gradient(0deg,black 0,black 14px,white 14px,white 28px), repeating-linear-gradient(90deg,black 0,black 14px,white 14px,white 28px); background-blend-mode:difference; }
+.qr-2 { background-image: repeating-linear-gradient(45deg,black 0,black 10px,white 10px,white 20px), repeating-linear-gradient(-45deg,black 0,black 10px,white 10px,white 20px); background-blend-mode:difference; }
+.qr-3 { background-image:radial-gradient(circle,black 3px,transparent 3px),radial-gradient(circle,black 3px,transparent 3px); background-size:14px 14px; background-position:0 0,7px 7px; }
+
+.ar-overlay-popup {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300; padding: 1rem;
+}
+.ar-overlay-popup.hidden { display: none; }
+.ar-card {
+  background: var(--ocean-deep);
+  border: 2px solid #00cc6a; border-radius: 14px;
+  max-width: 420px; width: 100%;
+  padding: 1.6rem;
+  position: relative;
+  box-shadow: 0 0 50px rgba(0,255,136,0.25);
+  animation: ar-emerge 0.5s cubic-bezier(.34,1.56,.64,1);
+  color: white;
+}
+@keyframes ar-emerge { from { transform: scale(0.4) rotateY(40deg); opacity: 0; } }
+.ar-card h3 { font-family:'Pirata One',cursive; color:var(--gold-light); font-size:1.3rem; margin-bottom:0.75rem; }
+.ar-card p { font-size:0.92rem; line-height:1.65; color:rgba(255,255,255,0.85); }
+.ar-close-btn {
+  position:absolute; top:0.75rem; right:0.75rem;
+  background:rgba(255,255,255,0.1); border:none; color:white;
+  width:30px; height:30px; border-radius:50%;
+  cursor:pointer; font-size:1rem;
+}
+.ar-info-box {
+  max-width: 480px;
+  background: rgba(0,255,136,0.06);
+  border: 1px solid rgba(0,255,136,0.2);
+  border-radius: 8px; padding: 1rem;
+  color: rgba(255,255,255,0.65);
+  font-size: 0.82rem; line-height: 1.6;
+}
+.ar-info-box code { background: rgba(0,255,136,0.15); padding: 1px 6px; border-radius: 3px; color: #00ff88; font-size: 0.8rem; }
+
+/* ===================== WIN SCREEN ===================== */
+#screen-win {
+  background: radial-gradient(ellipse, #2a1a05 0%, #0d0900 100%);
+}
+.win-wrap {
+  text-align: center;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 1.3rem;
+  padding: 2rem 1.5rem;
+  max-width: 560px;
+}
+.win-trophy {
+  font-size: 5.5rem;
+  animation: trophy-pulse 2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 25px gold) drop-shadow(0 0 50px rgba(255,200,0,0.5));
+}
+@keyframes trophy-pulse {
+  from { transform: rotate(-8deg) scale(1); }
+  to   { transform: rotate(8deg) scale(1.12); }
+}
+.win-title {
+  font-family: 'Pirata One', cursive;
+  font-size: clamp(2.2rem, 8vw, 3.8rem);
+  color: var(--gold-bright);
+  text-shadow: 0 0 40px rgba(255,220,60,0.7), 4px 4px 0 var(--red-flag);
+}
+.win-subtitle { color: var(--parchment); font-style:italic; font-size:1.05rem; }
+.win-coins { font-size:2.2rem; letter-spacing:8px; animation: coins-glow 1.8s ease-in-out infinite alternate; }
+.win-summary {
+  background: rgba(212,160,23,0.1);
+  border: 1px solid rgba(212,160,23,0.4);
+  border-radius: 10px; padding: 1.3rem 1.8rem;
+  text-align: left; width: 100%;
+}
+.win-summary h3 { font-family:'Cinzel',serif; color:var(--gold); margin-bottom:0.75rem; font-size:0.95rem; letter-spacing:2px; }
+.win-summary ul { list-style:none; display:flex; flex-direction:column; gap:0.45rem; }
+.win-summary li { color:var(--parchment); font-size:0.92rem; line-height:1.5; }
+
+/* ===================== SCROLLBAR ===================== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 3px; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 560px) {
+  .open-book { flex-direction: column; max-height: none; min-height: auto; }
+  .book-spine-3d { width: 100%; min-width: 100%; height: 16px; transform: none; }
+  .page-left { border-radius: 12px 12px 0 0; border-right: 3px solid var(--parchment-dark); border-bottom: none; }
+  .page-right { border-radius: 0 0 12px 12px; border-left: 3px solid var(--parchment-dark); border-top: none; }
+  .popup-3d-element { top: -40px; }
+  .popup-face-front { width: 80px; height: 80px; font-size: 2.3rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOADING ===== -->
+<div id="loading-screen">
+  <div class="loading-anchor">⚓</div>
+  <p class="loading-title">Memuat Peta Harta Karun...</p>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+</div>
+
+<!-- ===== COVER ===== -->
+<div id="screen-cover" class="screen">
+  <div class="stars" id="stars-container"></div>
+  <div class="waves-container">
+    <div class="wave"></div>
+    <div class="wave"></div>
+    <div class="wave"></div>
+  </div>
+  <div class="ship-silhouette">⛵</div>
+  <div class="cover-content">
+    <div class="cover-rope-top">⚓ · · · ⚓ · · · ⚓</div>
+    <h1 class="game-title">HARTA KARUN<span>Relasi &amp; Fungsi</span></h1>
+    <p class="subtitle">Petualangan Matematika Kelas 8</p>
+    <div class="coins-row">🪙 🪙 🪙 🪙 🪙</div>
+    <button class="btn-start" onclick="startAdventure()">⚔ MULAI PETUALANGAN ⚔</button>
+    <p class="hint-text">Jelajahi 5 lokasi misterius untuk menguasai Relasi &amp; Fungsi!</p>
+    <div class="cover-rope-bottom">🗺 · · · · 🗺</div>
+  </div>
+</div>
+
+<!-- ===== MAP ===== -->
+<div id="screen-map" class="screen hidden">
+  <div class="map-header">
+    <button class="btn-nav-sm" onclick="showScreen('cover')">← Kembali</button>
+    <h2 class="map-title">🗺 Peta Petualangan</h2>
+    <div class="score-badge">🪙 <span id="score-display">0</span> / 5</div>
+  </div>
+  <div class="map-container">
+    <div class="map-island" id="map-island">
+      <!-- sea decorations -->
+      <div class="sea-creature" style="top:6%;left:4%;animation-delay:0s">🐠</div>
+      <div class="sea-creature" style="top:12%;right:5%;animation-delay:1s">🐬</div>
+      <div class="sea-creature" style="bottom:8%;left:7%;animation-delay:2s">🦀</div>
+      <div class="sea-creature" style="bottom:4%;right:9%;animation-delay:0.5s">⚓</div>
+      <div class="sea-creature" style="top:45%;right:3%;animation-delay:1.5s">🐙</div>
+
+      <!-- Sign -->
+      <div class="map-sign">
+        <span>PIRATE</span>
+        <span>MAP</span>
+      </div>
+
+      <!-- Treasure spots -->
+      <div class="treasure-spot" id="spot-1" style="top:20%;left:23%" onclick="openChapter(1)">
+        <div class="spot-icon">🏝</div>
+        <div class="spot-label">Pulau Relasi</div>
+        <div class="spot-status" id="status-1">❓</div>
+      </div>
+      <div class="treasure-spot" id="spot-2" style="top:14%;left:54%" onclick="openChapter(2)">
+        <div class="spot-icon">🐊</div>
+        <div class="spot-label">Rawa Pemetaan</div>
+        <div class="spot-status" id="status-2">❓</div>
+      </div>
+      <div class="treasure-spot" id="spot-3" style="top:52%;left:37%" onclick="openChapter(3)">
+        <div class="spot-icon">💀</div>
+        <div class="spot-label">Gua Fungsi</div>
+        <div class="spot-status" id="status-3">❓</div>
+      </div>
+      <div class="treasure-spot" id="spot-4" style="top:64%;left:64%" onclick="openChapter(4)">
+        <div class="spot-icon">🦜</div>
+        <div class="spot-label">Kapal Domain</div>
+        <div class="spot-status" id="status-4">❓</div>
+      </div>
+      <div class="treasure-spot locked" id="spot-5" style="top:77%;left:46%" onclick="openChapter(5)">
+        <div class="spot-icon">🏆</div>
+        <div class="spot-label">Harta Karun!</div>
+        <div class="spot-status" id="status-5">🔒</div>
+      </div>
+
+      <!-- Path lines -->
+      <svg class="map-paths" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <path class="treasure-path" d="M23 23 Q38 18 54 18"/>
+        <path class="treasure-path" d="M54 18 Q44 35 37 56"/>
+        <path class="treasure-path" d="M37 56 Q50 60 64 68"/>
+        <path class="treasure-path" id="path-to-5" d="M48 68 Q47 72 46 81" stroke-dasharray="3,2" opacity="0.3"/>
+      </svg>
+    </div>
+  </div>
+  <button class="btn-ar" onclick="showScreen('ar')">📱 Mode AR</button>
+</div>
+
+<!-- ===== CHAPTER (3D POPUP BOOK) ===== -->
+<div id="screen-chapter" class="screen hidden">
+  <div class="chapter-backdrop"></div>
+
+  <div class="popup-stage">
+    <!-- 3D POPUP OBJECT (rises from book) -->
+    <div class="popup-3d-element" id="popup-3d-element">
+      <div class="popup-3d-inner">
+        <div class="popup-face-front" id="popup-face-front">🏝</div>
+        <div class="popup-face-bottom"></div>
+      </div>
+      <div class="popup-3d-shadow"></div>
+      <!-- Sparkles -->
+      <div class="sparkle" style="--tx:30px;--ty:-35px;--tx2:50px;--ty2:-70px;--dur:2.1s;--delay:0s;left:20px;top:20px"></div>
+      <div class="sparkle" style="--tx:-25px;--ty:-40px;--tx2:-45px;--ty2:-80px;--dur:2.4s;--delay:0.3s;right:20px;top:30px"></div>
+      <div class="sparkle" style="--tx:15px;--ty:-50px;--tx2:30px;--ty2:-90px;--dur:1.9s;--delay:0.7s;left:50px;top:10px"></div>
+      <div class="sparkle" style="--tx:-20px;--ty:-30px;--tx2:-40px;--ty2:-60px;--dur:2.6s;--delay:0.5s;right:40px;top:15px"></div>
+    </div>
+
+    <!-- 3D OPEN BOOK -->
+    <div class="book-3d-wrapper">
+      <div class="open-book">
+        <!-- Left page -->
+        <div class="page page-left">
+          <div class="page-inner" id="left-content"></div>
+          <div class="page-number" id="page-num-left">— i —</div>
+        </div>
+        <!-- Spine -->
+        <div class="book-spine-3d"></div>
+        <!-- Right page -->
+        <div class="page page-right">
+          <div class="page-inner" id="right-content"></div>
+          <div class="page-number" id="page-num-right">— ii —</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="book-nav">
+      <button class="btn-map-return" onclick="showScreen('map')">🗺 Peta</button>
+      <div class="chapter-dots" id="chapter-dots"></div>
+      <button class="btn-quiz-main" onclick="showQuizModal()">⚔ Tantangan!</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QUIZ MODAL ===== -->
+<div id="quiz-modal" class="modal-overlay hidden">
+  <div class="quiz-box">
+    <div class="quiz-header">
+      <span class="quiz-header-icon">❓</span>
+      <h3 id="quiz-title">Tantangan Bajak Laut</h3>
+    </div>
+    <div class="quiz-body">
+      <p id="quiz-question" class="quiz-question"></p>
+      <div id="quiz-options" class="quiz-options"></div>
+    </div>
+    <div id="quiz-feedback" class="quiz-feedback hidden"></div>
+  </div>
+</div>
+
+<!-- ===== AR SCREEN ===== -->
+<div id="screen-ar" class="screen hidden">
+  <div class="ar-header">
+    <button class="btn-nav-sm" onclick="showScreen('map')">← Kembali</button>
+    <h2>📱 Augmented Reality</h2>
+  </div>
+  <div class="ar-body">
+    <div class="ar-viewfinder">
+      <div class="ar-corner tl"></div>
+      <div class="ar-corner tr"></div>
+      <div class="ar-corner bl"></div>
+      <div class="ar-corner br"></div>
+      <div class="ar-scan-line"></div>
+      <p class="ar-prompt">Arahkan kamera ke <strong>marker harta karun</strong></p>
+    </div>
+    <div class="ar-markers">
+      <h3>Marker yang Tersedia:</h3>
+      <div class="marker-grid">
+        <div class="marker-card" onclick="simulateAR(1)">
+          <div class="marker-qr qr-1"></div>
+          <p>Relasi</p>
+        </div>
+        <div class="marker-card" onclick="simulateAR(2)">
+          <div class="marker-qr qr-2"></div>
+          <p>Fungsi</p>
+        </div>
+        <div class="marker-card" onclick="simulateAR(3)">
+          <div class="marker-qr qr-3"></div>
+          <p>Domain</p>
+        </div>
+      </div>
+    </div>
+    <div class="ar-info-box">
+      <p>💡 <strong>Integrasi AR:</strong> Website ini menggunakan <code>AR.js + A-Frame</code>.
+      Untuk implementasi penuh, tambahkan library AR.js dan buat marker Hiro atau custom marker.
+      Klik kartu marker di atas untuk simulasi AR.</p>
+    </div>
+  </div>
+  <div id="ar-overlay-popup" class="ar-overlay-popup hidden">
+    <div class="ar-card">
+      <button class="ar-close-btn" onclick="closeARPopup()">✕</button>
+      <div id="ar-popup-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== WIN ===== -->
+<div id="screen-win" class="screen hidden">
+  <div class="win-wrap">
+    <div class="win-trophy">🏆</div>
+    <h1 class="win-title">HARTA DITEMUKAN!</h1>
+    <p class="win-subtitle">Kamu telah menguasai semua materi Relasi &amp; Fungsi!</p>
+    <div class="win-coins">🪙🪙🪙🪙🪙</div>
+    <div class="win-summary">
+      <h3>Rangkuman Harta Pengetahuan</h3>
+      <ul>
+        <li>⚔ Relasi menghubungkan anggota dua himpunan</li>
+        <li>⚔ Fungsi adalah relasi satu input → satu output</li>
+        <li>⚔ Domain = himpunan asal (input)</li>
+        <li>⚔ Kodomain = himpunan kawan (semua kemungkinan output)</li>
+        <li>⚔ Range = hasil fungsi yang sesungguhnya</li>
+      </ul>
+    </div>
+    <button class="btn-start" onclick="restartGame()">⚓ Main Lagi</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CHAPTER DATA
+============================================================ */
+const chapters = [
+  {
+    id: 1,
+    icon: "🏝",
+    title: "Pulau Relasi",
+    subtitle: "Bab I",
+    materi: "Relasi adalah hubungan yang memasangkan anggota-anggota dari suatu himpunan ke himpunan lain. Relasi tidak mengharuskan setiap anggota terpasang.",
+    contoh: "A = {1, 2, 3},  B = {a, b, c}\nRelasi R: {(1,a), (2,b), (3,c)}\n\nDibaca: 1 berpasangan dengan a, dst."
+  },
+  {
+    id: 2,
+    icon: "🐊",
+    title: "Rawa Pemetaan",
+    subtitle: "Bab II",
+    materi: "Pemetaan (korespondensi) adalah relasi yang setiap anggota himpunan asal dipasangkan dengan tepat satu anggota himpunan kawan.",
+    contoh: "Pemetaan f: A → B\n  1 ——→ a\n  2 ——→ b\n  3 ——→ c\n\nSetiap elemen dipasangkan tepat 1×."
+  },
+  {
+    id: 3,
+    icon: "💀",
+    title: "Gua Fungsi",
+    subtitle: "Bab III",
+    materi: "Fungsi adalah relasi khusus di mana setiap anggota domain dipasangkan dengan tepat satu anggota kodomain. Dilambangkan f(x).",
+    contoh: "f: x → 2x\nf(1) = 2\nf(2) = 4\nf(3) = 6\n\nSatu input → satu output."
+  },
+  {
+    id: 4,
+    icon: "🦜",
+    title: "Kapal Domain",
+    subtitle: "Bab IV",
+    materi: "Domain adalah himpunan semua nilai input (asal). Kodomain adalah himpunan semua kemungkinan output. Range adalah subset kodomain yang benar-benar muncul.",
+    contoh: "f(x) = x²,  x ∈ {1, 2, 3}\n\nDomain   = {1, 2, 3}\nKodomain = {1, 2, 3, 4, 5 ...}\nRange    = {1, 4, 9}"
+  },
+  {
+    id: 5,
+    icon: "🏆",
+    title: "Harta Karun!",
+    subtitle: "Bab V — Final",
+    materi: "Selamat! Kamu telah menguasai semua konsep Relasi dan Fungsi. Kamu adalah penjelajah matematika sejati!",
+    contoh: "✔ Relasi → menghubungkan dua himpunan\n✔ Pemetaan → setiap input tepat 1 pasangan\n✔ Fungsi → relasi satu input satu output\n✔ Domain, Kodomain, Range\n\n🏴‍☠️ Harta Pengetahuan Berhasil Dikumpulkan!"
+  }
+];
+
+/* ============================================================
+   QUIZ DATA
+============================================================ */
+const quizzes = [
+  {
+    q: "Apa yang dimaksud dengan relasi?",
+    opts: ["Hubungan antara dua himpunan", "Bilangan bulat positif", "Operasi penjumlahan"],
+    ans: 0
+  },
+  {
+    q: "Pemetaan mensyaratkan setiap anggota domain dipasangkan dengan berapa anggota?",
+    opts: ["Tidak perlu dipasangkan", "Tepat satu anggota", "Dua anggota atau lebih"],
+    ans: 1
+  },
+  {
+    q: "Sifat utama sebuah fungsi adalah?",
+    opts: ["Satu input bisa punya banyak output", "Satu input punya tepat satu output", "Semua output harus berbeda"],
+    ans: 1
+  },
+  {
+    q: "Dari f(x) = x², x ∈ {1,2,3}, apakah range-nya?",
+    opts: ["{1, 2, 3}", "{1, 4, 9}", "{0, 1, 2, 3, 4, 9}"],
+    ans: 1
+  },
+  {
+    q: "Apa perbedaan kodomain dan range?",
+    opts: ["Sama saja", "Kodomain = semua kemungkinan output, Range = output aktual", "Range lebih luas dari kodomain"],
+    ans: 1
+  }
+];
+
+/* ============================================================
+   GLOBAL STATE
+============================================================ */
+let currentScreen  = "cover";
+let currentChapter = 0;
+let score          = 0;
+let completedSet   = new Set();
+
+/* ============================================================
+   INIT
+============================================================ */
+window.addEventListener("load", () => {
+  // Generate stars
+  const starsContainer = document.getElementById("stars-container");
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement("div");
+    star.className = "star";
+    const size = Math.random() * 3 + 1;
+    star.style.cssText = `
+      width:${size}px; height:${size}px;
+      top:${Math.random()*100}%;
+      left:${Math.random()*100}%;
+      animation-delay:${Math.random()*4}s;
+      animation-duration:${2+Math.random()*3}s;
+    `;
+    starsContainer.appendChild(star);
+  }
+
+  // Build chapter dots
+  buildChapterDots();
+
+  // Fade out loading screen
+  setTimeout(() => {
+    const ls = document.getElementById("loading-screen");
+    ls.classList.add("fade-out");
+    setTimeout(() => ls.style.display = "none", 1000);
+  }, 2400);
+});
+
+/* ============================================================
+   SCREEN NAVIGATION
+============================================================ */
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.add("hidden"));
+  const target = document.getElementById(`screen-${name}`);
+  if (target) {
+    target.classList.remove("hidden");
+    currentScreen = name;
+  }
+}
+
+/* ============================================================
+   START
+============================================================ */
+function startAdventure() {
+  showScreen("map");
+  refreshMap();
+}
+
+/* ============================================================
+   OPEN CHAPTER
+============================================================ */
+function openChapter(id) {
+  if (id === 5 && score < 4) {
+    // shake the locked spot
+    const spot = document.getElementById("spot-5");
+    spot.style.animation = "none";
+    spot.offsetHeight;
+    spot.style.animation = "shake 0.4s ease";
+    return;
+  }
+
+  currentChapter = id;
+  const c = chapters[id - 1];
+
+  // Update popup 3D object
+  const popupEl = document.getElementById("popup-3d-element");
+  const popupFace = document.getElementById("popup-face-front");
+  popupFace.textContent = c.icon;
+
+  // Reset animation
+  popupEl.style.animation = "none";
+  popupEl.offsetHeight;
+  popupEl.style.animation =
+    "popup-rise 0.7s cubic-bezier(.34,1.56,.64,1) forwards, popup-hover 4s ease-in-out 0.7s infinite";
+
+  // Left page content
+  document.getElementById("left-content").innerHTML = `
+    <p class="chapter-num">${c.subtitle}</p>
+    <div class="chapter-icon-display">${c.icon}</div>
+    <h2 class="chapter-title-display">${c.title}</h2>
+    <div class="divider-ornament">⚓ ·· ⚓</div>
+    <p class="materi-label">📜 Materi</p>
+    <p class="materi-text">${c.materi}</p>
+  `;
+
+  // Right page content
+  document.getElementById("right-content").innerHTML = `
+    <p class="contoh-label">⚔ Contoh</p>
+    <pre class="contoh-box">${c.contoh}</pre>
+  `;
+
+  document.getElementById("page-num-left").textContent  = `— ${id * 2 - 1} —`;
+  document.getElementById("page-num-right").textContent = `— ${id * 2} —`;
+
+  // Update dots
+  updateChapterDots(id);
+
+  showScreen("chapter");
+}
+
+/* ============================================================
+   CHAPTER DOTS
+============================================================ */
+function buildChapterDots() {
+  const dotsEl = document.getElementById("chapter-dots");
+  dotsEl.innerHTML = "";
+  for (let i = 1; i <= 5; i++) {
+    const dot = document.createElement("div");
+    dot.className = "chapter-dot";
+    dot.id = `dot-${i}`;
+    dot.title = `Bab ${i}`;
+    dot.onclick = () => openChapter(i);
+    dotsEl.appendChild(dot);
+  }
+}
+
+function updateChapterDots(activeId) {
+  for (let i = 1; i <= 5; i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    if (!dot) continue;
+    dot.className = "chapter-dot";
+    if (completedSet.has(i)) dot.classList.add("done");
+    if (i === activeId) dot.classList.add("active");
+  }
+}
+
+/* ============================================================
+   MAP REFRESH
+============================================================ */
+function refreshMap() {
+  document.getElementById("score-display").textContent = score;
+
+  for (let i = 1; i <= 4; i++) {
+    if (completedSet.has(i)) {
+      document.getElementById(`status-${i}`).textContent = "✅";
+      document.getElementById(`spot-${i}`).classList.add("done");
+    }
+  }
+
+  if (score >= 4) {
+    document.getElementById("spot-5").classList.remove("locked");
+    document.getElementById("status-5").textContent = "❓";
+    document.getElementById("path-to-5").style.opacity = "0.8";
+  }
+
+  if (completedSet.has(5) || score === 5) {
+    showScreen("win");
+  }
+}
+
+/* ============================================================
+   QUIZ
+============================================================ */
+function showQuizModal() {
+  const quiz = quizzes[currentChapter - 1];
+  document.getElementById("quiz-title").textContent = `Tantangan — Bab ${currentChapter}`;
+  document.getElementById("quiz-question").textContent = quiz.q;
+
+  const optBox = document.getElementById("quiz-options");
+  optBox.innerHTML = "";
+  quiz.opts.forEach((opt, idx) => {
+    const btn = document.createElement("div");
+    btn.className = "quiz-option";
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(btn, idx, quiz.ans);
+    optBox.appendChild(btn);
+  });
+
+  document.getElementById("quiz-feedback").classList.add("hidden");
+  document.getElementById("quiz-modal").classList.remove("hidden");
+}
+
+function checkAnswer(el, idx, correct) {
+  const opts = document.querySelectorAll(".quiz-option");
+  opts.forEach(o => o.onclick = null);
+
+  if (idx === correct) {
+    el.classList.add("correct");
+    showFeedback(true);
+    if (!completedSet.has(currentChapter)) {
+      completedSet.add(currentChapter);
+      score++;
+      refreshMap();
+      updateChapterDots(currentChapter);
+    }
+  } else {
+    el.classList.add("wrong");
+    opts[correct].classList.add("correct");
+    showFeedback(false);
+  }
+}
+
+function showFeedback(success) {
+  const fb = document.getElementById("quiz-feedback");
+  fb.classList.remove("hidden", "success", "fail");
+  fb.classList.add(success ? "success" : "fail");
+  fb.textContent = success
+    ? "🎉 Benar! Harta berhasil ditemukan!"
+    : "❌ Salah! Pelajari lagi materinya, penjelajah!";
+
+  setTimeout(() => {
+    document.getElementById("quiz-modal").classList.add("hidden");
+  }, 2200);
+}
+
+/* ============================================================
+   AR SIMULATION
+============================================================ */
+const arData = [
+  {
+    title: "⚓ Relasi",
+    body: "Relasi adalah hubungan antara anggota dua himpunan. Contoh: A = {1,2}, B = {a,b}, Relasi: {(1,a),(2,b)}."
+  },
+  {
+    title: "💀 Fungsi",
+    body: "Fungsi adalah relasi khusus di mana satu input selalu menghasilkan tepat satu output. f(x) = 2x berarti setiap x dikalikan 2."
+  },
+  {
+    title: "🦜 Domain & Range",
+    body: "Domain = himpunan semua nilai input. Range = himpunan nilai output yang benar-benar dihasilkan oleh fungsi."
+  }
+];
+
+function simulateAR(id) {
+  const d = arData[id - 1];
+  document.getElementById("ar-popup-content").innerHTML =
+    `<h3>${d.title}</h3><p>${d.body}</p>`;
+  document.getElementById("ar-overlay-popup").classList.remove("hidden");
+}
+
+function closeARPopup() {
+  document.getElementById("ar-overlay-popup").classList.add("hidden");
+}
+
+/* ============================================================
+   RESTART
+============================================================ */
+function restartGame() {
+  score = 0;
+  completedSet.clear();
+  currentChapter = 0;
+  buildChapterDots();
+  refreshMap();
+  showScreen("cover");
+}
+
+// Shake keyframe for locked spot
+const shakeStyle = document.createElement("style");
+shakeStyle.textContent = `
+  @keyframes shake {
+    0%,100%{transform:translate(-50%,-50%)}
+    20%{transform:translate(-48%,-50%) rotate(-6deg)}
+    40%{transform:translate(-52%,-50%) rotate(6deg)}
+    60%{transform:translate(-48%,-50%) rotate(-4deg)}
+    80%{transform:translate(-52%,-50%) rotate(4deg)}
+  }
+`;
+document.head.appendChild(shakeStyle);
+</script>
+</body>
+</html>
